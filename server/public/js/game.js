@@ -1,3 +1,7 @@
+//import { BattleScene } from "./BattleScene";
+
+const battleScene = new BattleScene();
+
 const config = {
     type: Phaser.AUTO,
     scale: {
@@ -13,15 +17,12 @@ const config = {
             gravity: { y: 0 }
         }
     },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+    scene: [ battleScene ]
 };
 
 const game = new Phaser.Game(config);
 
+/*
 function preload() {
     this.load.image('blueShip', 'assets/blueShip.png');
     this.load.image('orangeShip', 'assets/orangeShip.png');
@@ -111,3 +112,5 @@ function displayPlayers(self, playerInfo, sprite) {
 
     return player;
 }
+*/
+

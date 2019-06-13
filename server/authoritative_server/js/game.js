@@ -23,11 +23,26 @@ const config = {
 function preload() {
     this.load.image('blueShip', 'assets/blueShip.png');
     this.load.image('orangeShip', 'assets/orangeShip.png');
+
+    this.load.image('tiles', 'assets/spaceTiles-extruded.png');
+    this.load.tilemapTiledJSON('map', 'assets/subspace2Map2.json');
 }
 
 function create() {
     const self = this;
     this.players = this.physics.add.group();
+
+    const map = this.make.tilemap({ key: 'map' });
+    const tileset = map.addTilesetImage('spaceTiles', 'tiles', 16, 16, 1, 2);
+    const spaceLayer = map.createStaticLayer('space', tileset, 0, 0).setScale(1);
+    const structureLayer = map.createStaticLayer('structure', tileset, 0, 0).setScale(1);
+
+    spaceLayer.scrollFactorX = 0.2;
+    spaceLayer.scrollFactorY = 0.2;
+
+    structureLayer.setCollisionByProperty({ collides: true });
+
+    this.physics.add.collider(this.players, structureLayer);
 
     io.on('connection', socket => {
         console.log('a user connected');
@@ -99,10 +114,12 @@ function handlePlayerInput(self, playerId, input) {
 }
 
 function addPlayer(self, playerInfo) {
-    const player = self.physics.add.image(playerInfo.x, playerInfo.y, 'blueShip');
+    const player = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueShip');
     player.setMaxVelocity(200);
     player.playerId = playerInfo.playerId;
     self.players.add(player);
+    player.setBounce(.75);
+    player.body.enable = true;
 }
 
 function removePlayer(self, playerId) {
