@@ -116,9 +116,10 @@ function handlePlayerInput(self, playerId, input) {
 function addPlayer(self, playerInfo) {
     const player = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueShip');
     player.setMaxVelocity(200);
+    player.setScale(0.75);
     player.playerId = playerInfo.playerId;
     self.players.add(player);
-    player.setBounce(.75);
+    player.setBounce(0.75);
     player.body.enable = true;
 }
 

@@ -103,6 +103,7 @@ class BattleScene extends Phaser.Scene {
 
 function displayPlayers(self, playerInfo, sprite) {
     const player = self.physics.add.sprite(playerInfo.x, playerInfo.y, sprite);
+    player.setScale(0.75);
     player.playerId = playerInfo.playerId;
     self.players.add(player);
 
