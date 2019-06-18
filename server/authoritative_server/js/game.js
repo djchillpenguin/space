@@ -8,7 +8,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false,
+            debug: true,
             gravity: { y: 0 }
         }
     },
@@ -117,6 +117,8 @@ function addPlayer(self, playerInfo) {
     const player = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueShip');
     player.setMaxVelocity(200);
     player.setScale(0.75);
+    player.setCircle(15);
+    player.setOffset(1, 1);
     player.playerId = playerInfo.playerId;
     self.players.add(player);
     player.setBounce(0.75);

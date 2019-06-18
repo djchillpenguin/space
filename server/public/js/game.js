@@ -1,5 +1,3 @@
-//import { BattleScene } from "./BattleScene";
-
 const battleScene = new BattleScene();
 
 const config = {
