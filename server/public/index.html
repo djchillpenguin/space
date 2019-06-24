@@ -13,12 +13,53 @@
         canvas {
             overflow: hidden;
         }
+
+        #pilotname {
+            color: #55ff00;
+            background-color: gray;
+            border: none;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 3vw;
+            width: 15vw;
+            display: inline-block;
+        }
+
+        #title {
+            color: #ffffff;
+            text-align: center;
+            font-family: monospace;
+            font-size: 5vw;
+        }
+
+        label {
+            color: white;
+            display: block;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.5vw;
+            padding: 1vw;
+        }
+
+        #pilotDataInput {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="js/LoginScene.js"></script>
     <script src="js/BattleScene.js"></script>
     <script src="js/game.js"></script>
     <script src="js/EngineFire.js"></script>
+    <script src="js/Laser.js"></script>
+
+    <div>
+        <h1 id="title">SPACE THE GAME</h1>
+        <form id="pilotDataInput">
+            <label for="pilotname" id="pilotNameLabel"></label>
+            <input id="pilotname" type="text">
+        </form>
+    </div>
 </body>
 </html>

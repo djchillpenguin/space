@@ -8,31 +8,31 @@ class BattleScene extends Phaser.Scene {
     }
 
     preload(){
-        this.load.image('blueShip', 'assets/blueShip.png');
-        this.load.image('orangeShip', 'assets/orangeShip.png');
-
-        this.load.image('tiles', 'assets/spaceTiles-extruded.png');
-        this.load.tilemapTiledJSON('map', 'assets/subspace2Map2.json');
-
-        this.load.spritesheet('engineFire', 'assets/engineFire.png', { frameWidth: 32, frameHeight: 32 });
+        
     }
 
     create() {
+        //variables
         let camera = this.cameras.main;
         let self = this;
         this.socket = io();
         this.players = this.physics.add.group();
+        this.projectiles = this.physics.add.group({ runChildUpdate: true });
 
+        //map creation
         const map = this.make.tilemap({ key: 'map' });
         const tileset = map.addTilesetImage('spaceTiles', 'tiles', 16, 16, 1, 2);
-        const spaceLayer = map.createStaticLayer('space', tileset, 0, 0).setScale(1);
-        const structureLayer = map.createStaticLayer('structure', tileset, 0, 0).setScale(1);
+        const spaceLayer = map.createStaticLayer('space', tileset, 0, 0).setScale(1.2);
+        const structureLayer = map.createStaticLayer('structure', tileset, 0, 0).setScale(1.2);
 
         spaceLayer.scrollFactorX = 0.2;
         spaceLayer.scrollFactorY = 0.2;
 
         structureLayer.setCollisionByProperty({ collides: true });
 
+        this.physics.add.collider(this.players, this.projectiles);
+
+        //network stuff
         this.socket.on('currentPlayers', players => {
             Object.keys(players).forEach(id => {
                 if (players[id].playerId === self.socket.id) {
@@ -67,12 +67,19 @@ class BattleScene extends Phaser.Scene {
             });
         });
 
+        this.socket.on('weaponFired', (player) => {
+            fireWeapon(self, player)
+        });
+
+        //input creation
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKeyPressed = false;
         this.rightKeyPressed = false;
         this.upKeyPressed = false;
         this.downKeyPressed = false;
+        this.spaceKeyPressed = false;
 
+        //animations
         this.anims.create({
            key: 'shipEngineFire',
            frames: this.anims.generateFrameNumbers('engineFire', { start: 0, end: 5 }),
@@ -86,6 +93,7 @@ class BattleScene extends Phaser.Scene {
         const right = this.rightKeyPressed;
         const up = this.upKeyPressed;
         const down = this.downKeyPressed;
+        const space = this.spaceKeyPressed;
 
         if (this.cursors.left.isDown) {
             this.leftKeyPressed = true;
@@ -98,34 +106,23 @@ class BattleScene extends Phaser.Scene {
 
         if (this.cursors.up.isDown) {
             this.upKeyPressed = true;
-            /*let engineFire = this.physics.add.sprite(this.selfPlayer.x, this.selfPlayer.y, 'engineFire').play('shipEngineFire');
-            engineFire.setRotation(this.selfPlayer.rotation);
-            engineFire.setVelocityX(this.selfPlayer.body.velocity.x);
-            engineFire.setVelocityY(this.selfPlayer.body.velocity.y);
-            engineFire.on("animationcomplete", ()=> {
-                engineFire.destroy();
-            });*/
-
             fireEngines(this);
         } else if (this.cursors.down.isDown) {
             this.downKeyPressed = true;
-
-            /*let engineFire = this.physics.add.sprite(this.selfPlayer.x, this.selfPlayer.y, 'engineFire').play('shipEngineFire');
-            engineFire.setRotation(this.selfPlayer.rotation);
-            engineFire.setVelocityX(this.selfPlayer.body.velocity.x);
-            engineFire.setVelocityY(this.selfPlayer.body.velocity.y);
-            engineFire.on("animationcomplete", ()=> {
-                engineFire.destroy();
-            });*/
-
             fireEngines(this);
         } else {
             this.upKeyPressed = false;
             this.downKeyPressed = false;
         }
 
-        if (left !== this.leftKeyPressed || right !== this.rightKeyPressed || up !== this.upKeyPressed || down !== this.downKeyPressed) {
-            this.socket.emit('playerInput', { left: this.leftKeyPressed, right: this.rightKeyPressed, up: this.upKeyPressed, down: this.downKeyPressed });
+        if (this.cursors.space.isDown) {
+            this.spaceKeyPressed = true;
+        } else {
+            this.spaceKeyPressed = false;
+        }
+
+        if (left !== this.leftKeyPressed || right !== this.rightKeyPressed || up !== this.upKeyPressed || down !== this.downKeyPressed || space !== this.spaceKeyPressed) {
+            this.socket.emit('playerInput', { left: this.leftKeyPressed, right: this.rightKeyPressed, up: this.upKeyPressed, down: this.downKeyPressed, space: this.spaceKeyPressed });
         }
     }
 }
@@ -139,8 +136,6 @@ function displayPlayers(self, playerInfo, sprite) {
     player.playerId = playerInfo.playerId;
     self.players.add(player);
 
-    console.log(player);
-
     return player;
 }
 
@@ -153,4 +148,76 @@ function fireEngines(self) {
     engineFire.on("animationcomplete", ()=> {
         engineFire.destroy();
     });
+}
+
+function fireWeapon(self, player) {
+    let laser = self.physics.add.sprite(player.x, player.y, 'laser');
+    laser.setPosition(calcWeaponStartPositionX(player), calcWeaponStartPositionY(player));
+    self.projectiles.add(laser);
+    laser.setSize(4, 4);
+    laser.setRotation(player.rotation);
+    laser.body.rotation = player.rotation;
+    laser.setScale(0.75);
+    laser.setVisible(true);
+    laser.setActive(true);
+    laser.body.enable = true;
+    laser.body.setMass(0.01);
+    self.physics.velocityFromRotation(player.rotation, 500, laser.body.velocity);
+    laser.lifespan = 2000;
+    laser.update = function(time, delta){
+        this.lifespan -= delta;
+        if(this.lifespan <= 0){
+            this.destroy();
+        }
+    }
+
+    console.log(player.rotation);
+
+    /*let laser = new Laser(self, player);
+    console.log(laser.texture);
+    laser.setVisible(true);
+    laser.setTexture('blueShip');
+    self.physics.add.sprite(laser);
+    self.physics.velocityFromRotation(laser.rotation, 500, laser.body.velocity);
+    console.log(laser);*/
+}
+
+function calcWeaponStartPositionX(player) {
+    if (player.rotation === 0) { //right 
+        return player.x + 12;
+    } else if (player.rotation === (Math.PI/2) * -1) { //up
+        return player.x;
+    } else if (player.rotation === Math.PI) { //left
+        return player.x - 12;
+    } else if (player.rotation === (Math.PI / 2)) { //down
+        return player.x;
+    } else if (player.rotation < 0 && player.rotation > (Math.PI/2) * -1) {  //up-right
+        return player.x + (12 * Math.cos(Math.abs(player.rotation)));
+    } else if (player.rotation < (Math.PI/2) * -1 && player.rotation > Math.PI * -1) { //up-left
+        return player.x + (12 * Math.cos(Math.abs(player.rotation)));
+    } else if (player.rotation < Math.PI && player.rotation > Math.PI / 2) { //down-left
+        return player.x + (12 * Math.cos(Math.abs(player.rotation)));
+    } else if (player.rotation < Math.PI / 2 && player.rotation > 0) { //down-right
+        return player.x + (12 * Math.cos(Math.abs(player.rotation)));
+    }
+}
+
+function calcWeaponStartPositionY(player) {
+    if (player.rotation === 0) {  //right
+        return player.y;
+    } else if (player.rotation === (Math.PI/2) * -1) {  //up
+        return player.y - 12;
+    } else if (player.rotation === Math.PI) {  //left
+        return player.y;
+    } else if (player.rotation === (Math.PI / 2)) {  //down
+        return player.y + 12;
+    } else if (player.rotation < 0 && player.rotation > (Math.PI/2) * -1) {  //up-right
+        return player.y - (12 * Math.sin(Math.abs(player.rotation)));
+    } else if (player.rotation < ((Math.PI/2) * -1) && player.rotation > (Math.PI * -1)) {  //up-left
+        return player.y - (12 * Math.sin(Math.abs(player.rotation)));
+    } else if (player.rotation < Math.PI && player.rotation > Math.PI / 2) {  //down-left
+        return player.y + (12 * Math.sin(Math.abs(player.rotation)));
+    } else if (player.rotation < Math.PI / 2 && player.rotation > 0) {  //down-right
+        return player.y + (12 * Math.sin(Math.abs(player.rotation)));
+    }
 }

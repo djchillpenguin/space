@@ -1,3 +1,4 @@
+const loginScene = new LoginScene();
 const battleScene = new BattleScene();
 
 const config = {
@@ -15,7 +16,7 @@ const config = {
             gravity: { y: 0 }
         }
     },
-    scene: [ battleScene ]
+    scene: [ loginScene, battleScene ]
 };
 
 const game = new Phaser.Game(config);
